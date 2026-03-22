@@ -664,7 +664,7 @@ function openReject(id){rejectId=id;document.getElementById('rej-inp').value='';
 function confirmReject(){
   const r=document.getElementById('rej-inp').value.trim();
   if(!r){document.getElementById('rej-inp').focus();toast('Remark required');return}
-  closeSheet('sh-reject');rejectTask(rejectId,r);
+  const id=rejectId;closeSheet('sh-reject');rejectTask(id,r);
 }
 
 // ── SETTINGS ──────────────────────────────────────────
