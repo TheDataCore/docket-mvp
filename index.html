@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0e0c">
+<title>Docket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f0e0c;
+  --s1:#171613;
+  --s2:#1e1c19;
+  --s3:#262420;
+  --ln:rgba(255,255,255,0.055);
+  --ln2:rgba(255,255,255,0.10);
+  --t1:#e4dfd8;
+  --t2:#7c7670;
+  --t3:#3d3b37;
+  --p3:#b8735a;--p3b:rgba(184,115,90,0.13);--p3l:rgba(184,115,90,0.4);
+  --p2:#7a9e6a;--p2b:rgba(122,158,106,0.11);--p2l:rgba(122,158,106,0.4);
+  --p1:#6a8fa6;--p1b:rgba(106,143,166,0.11);--p1l:rgba(106,143,166,0.4);
+  --dc:#4e9e78;--db:rgba(78,158,120,0.11);
+  --rc:#9a8ab0;--rb:rgba(154,138,176,0.11);
+  --oc:#c4775a;
+  --font:'DM Sans',system-ui,sans-serif;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --r:10px;--rs:7px;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px;line-height:1.5;position:fixed;width:100%}
+input,textarea,button,select{font-family:var(--font)}
+input[type="date"],input[type="datetime-local"]{color-scheme:dark}
+::-webkit-scrollbar{display:none}
+
+/* ── APP SHELL ── */
+#app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;position:relative}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;flex-shrink:0;border-bottom:1px solid var(--ln)}
+.brand{font-family:var(--serif);font-size:12px;letter-spacing:0.32em;text-transform:uppercase;color:var(--t2);font-weight:300}
+.brand-by{font-size:9px;color:var(--t3);letter-spacing:0.08em;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:4px}
+.hdr-btn{background:transparent;border:none;color:var(--t3);cursor:pointer;padding:6px;border-radius:50%;transition:color 0.2s;display:flex;align-items:center;justify-content:center}
+.hdr-btn:hover{color:var(--t2)}
+.hdr-btn svg{width:17px;height:17px}
+
+/* ── NAV ── */
+.nav{display:flex;border-top:1px solid var(--ln);flex-shrink:0;background:var(--bg)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px 13px;background:transparent;border:none;cursor:pointer;color:var(--t3);font-family:var(--font);font-size:9px;letter-spacing:0.05em;text-transform:uppercase;transition:color 0.2s;position:relative}
+.nb svg{width:17px;height:17px}
+.nb.active{color:var(--t1)}
+.nb-ind{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--t1);opacity:0;transition:opacity 0.2s}
+.nb.active .nb-ind{opacity:1}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:90px}
+.view{display:none}
+.view.active{display:block}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:62px;right:20px;width:46px;height:46px;border-radius:50%;background:var(--t1);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--bg);box-shadow:0 6px 28px rgba(0,0,0,0.45);transition:transform 0.18s,opacity 0.2s;z-index:20}
+.fab:active{transform:scale(0.91)}
+.fab svg{width:20px;height:20px}
+.fab.hidden{opacity:0;pointer-events:none}
+
+/* ── SECTION HEADERS ── */
+.sec-hdr{display:flex;align-items:baseline;gap:10px;padding:22px 20px 0}
+.sec-title{font-family:var(--serif);font-size:26px;font-weight:300;font-style:italic;color:var(--t1);letter-spacing:-0.01em;line-height:1}
+.sec-count{font-size:10px;color:var(--t3);font-weight:300}
+
+/* ── OVERDUE NOTICE ── */
+.ov-notice{margin:12px 20px 0;padding:8px 12px;background:rgba(196,119,90,0.07);border-left:2px solid var(--oc);border-radius:0 var(--rs) var(--rs) 0;font-size:11px;color:var(--oc);font-weight:300;line-height:1.5}
+
+/* ── TASK LIST ── */
+.task-list{padding:8px 20px 0}
+
+/* ── TASK ROW ── */
+.task-row{padding:13px 0;border-bottom:1px solid var(--ln);cursor:pointer;position:relative}
+.task-row:last-child{border-bottom:none}
+.task-main{display:flex;align-items:flex-start;gap:11px}
+.pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px;transition:box-shadow 0.2s}
+.pd3{background:var(--p3c, var(--p3));box-shadow:0 0 7px var(--p3)}
+.pd2{background:var(--p2)}
+.pd1{background:var(--p1)}
+.pdd{background:var(--dc);opacity:0.45}
+.pdr{background:var(--rc);opacity:0.4}
+.task-body{flex:1;min-width:0}
+.task-ttl{font-size:14px;font-weight:400;color:var(--t1);line-height:1.4;word-break:break-word}
+.task-ttl.crossed{text-decoration:line-through;color:var(--t3);font-weight:300}
+.task-preview{font-size:12px;color:var(--t3);font-weight:300;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-dl{font-size:11px;font-weight:300;white-space:nowrap;flex-shrink:0;margin-top:3px;color:var(--t2)}
+.task-dl.od{color:var(--oc)}
+
+/* ── EXPANDED ── */
+.task-expand{display:none;margin-left:18px;padding-top:10px}
+.task-row.open .task-expand{display:block}
+.task-desc{font-size:13px;color:var(--t2);font-weight:300;line-height:1.65;margin-bottom:11px;word-break:break-word}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.chip{font-size:10px;font-weight:400;padding:3px 9px;border-radius:99px;letter-spacing:0.02em}
+.chip-p3{background:var(--p3b);color:var(--p3)}
+.chip-p2{background:var(--p2b);color:var(--p2)}
+.chip-p1{background:var(--p1b);color:var(--p1)}
+.chip-cat{background:var(--s2);color:var(--t2)}
+.chip-date{background:var(--s2);color:var(--t2)}
+.chip-od{background:rgba(196,119,90,0.1);color:var(--oc)}
+.chip-sr{background:var(--s2);color:var(--t3)}
+.chip-done{background:var(--db);color:var(--dc)}
+
+/* ── LOG ── */
+.log-section{margin-bottom:12px}
+.log-lbl{font-size:9px;color:var(--t3);letter-spacing:0.12em;text-transform:uppercase;font-weight:400;margin-bottom:7px}
+.log-entry{display:flex;gap:10px;margin-bottom:5px}
+.log-ts{font-size:10px;color:var(--t3);font-weight:300;white-space:nowrap;min-width:58px;padding-top:1px;flex-shrink:0}
+.log-txt{font-size:12px;color:var(--t2);font-weight:300;line-height:1.55;word-break:break-word}
+.log-add{display:flex;gap:8px;align-items:flex-end;margin-top:8px}
+.log-inp{flex:1;background:transparent;border:none;border-bottom:1px solid var(--ln2);color:var(--t1);font-size:12px;font-weight:300;padding:5px 0;outline:none;resize:none;line-height:1.4;font-family:var(--font)}
+.log-inp::placeholder{color:var(--t3)}
+.log-save{background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:11px;font-family:var(--font);padding:4px 0 5px;transition:color 0.15s;white-space:nowrap}
+.log-save:hover{color:var(--t2)}
+
+/* ── TASK ACTIONS ── */
+.t-acts{display:flex;gap:20px;padding-top:12px;border-top:1px solid var(--ln);margin-top:6px;align-items:center}
+.ta{background:transparent;border:none;font-family:var(--font);font-size:12px;font-weight:400;cursor:pointer;padding:0;transition:color 0.15s;letter-spacing:0.02em}
+.ta-edit{color:var(--t2)}.ta-edit:hover{color:var(--t1)}
+.ta-done{color:var(--dc)}.ta-done:hover{color:#72c49a}
+.ta-rej{color:var(--t3)}.ta-rej:hover{color:var(--rc)}
+.ta-reopen{color:var(--p1)}.ta-reopen:hover{color:#8bb4cc}
+.ta-sp{flex:1}
+
+/* ── REJECTION REMARK ── */
+.rej-box{background:rgba(154,138,176,0.07);border-left:2px solid var(--rc);padding:8px 11px;margin-bottom:11px;border-radius:0 var(--rs) var(--rs) 0}
+.rej-box-lbl{font-size:9px;color:var(--rc);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:3px}
+.rej-box-txt{font-size:12px;color:var(--t2);font-weight:300;line-height:1.55}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:64px 36px 40px}
+.empty-glyph{font-family:var(--serif);font-size:52px;color:var(--t3);font-style:italic;font-weight:300;line-height:1;margin-bottom:14px}
+.empty-ttl{font-family:var(--serif);font-size:20px;color:var(--t2);font-weight:300;font-style:italic;margin-bottom:8px}
+.empty-sub{font-size:12px;color:var(--t3);font-weight:300;line-height:1.65}
+
+/* ── SHEETS / OVERLAY ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:50;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.22s;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.overlay.open{opacity:1;pointer-events:all}
+.sheet{width:100%;max-width:480px;margin:0 auto;background:var(--s1);border-radius:18px 18px 0 0;border-top:1px solid var(--ln2);padding:0 20px 36px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);max-height:92vh;overflow-y:auto}
+.overlay.open .sheet{transform:translateY(0)}
+.sheet-handle{width:30px;height:3px;background:var(--ln2);border-radius:2px;margin:11px auto 20px}
+.sheet-ttl{font-family:var(--serif);font-size:22px;font-weight:300;font-style:italic;color:var(--t1);margin-bottom:20px;letter-spacing:-0.01em}
+
+/* ── FORM FIELDS ── */
+.field{margin-bottom:20px}
+.field-lbl{font-size:9px;color:var(--t3);letter-spacing:0.12em;text-transform:uppercase;font-weight:400;margin-bottom:7px;display:block}
+.f-inp{width:100%;background:transparent;border:none;border-bottom:1px solid var(--ln2);color:var(--t1);font-size:14px;font-weight:300;padding:6px 0;outline:none;display:block;transition:border-color 0.2s;font-family:var(--font)}
+.f-inp:focus{border-color:var(--t2)}
+.f-inp::placeholder{color:var(--t3)}
+textarea.f-inp{resize:none;min-height:56px;line-height:1.55}
+
+/* ── PRIORITY PICKER ── */
+.p-picker{display:flex;gap:8px}
+.p-opt{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:1px solid var(--ln);border-radius:var(--r);cursor:pointer;background:transparent;transition:all 0.15s;font-family:var(--font)}
+.p-opt .pdot-lg{width:8px;height:8px;border-radius:50%}
+.p-opt .p-n{font-family:var(--serif);font-size:20px;font-weight:300;line-height:1;color:var(--t3)}
+.p-opt .p-lb{font-size:9px;color:var(--t3);font-weight:300;letter-spacing:0.04em}
+.p-opt.sel1{border-color:var(--p1);background:var(--p1b)}.p-opt.sel1 .p-n,.p-opt.sel1 .p-lb{color:var(--p1)}
+.p-opt.sel2{border-color:var(--p2);background:var(--p2b)}.p-opt.sel2 .p-n,.p-opt.sel2 .p-lb{color:var(--p2)}
+.p-opt.sel3{border-color:var(--p3);background:var(--p3b)}.p-opt.sel3 .p-n,.p-opt.sel3 .p-lb{color:var(--p3)}
+
+/* ── P3 NOTICE ── */
+.p3-notice{font-size:11px;color:var(--p3);font-weight:300;padding:7px 10px;background:var(--p3b);border-radius:var(--rs);margin-top:7px;line-height:1.5;display:none}
+.p3-notice.on{display:block}
+
+/* ── CATEGORY CHIPS ── */
+.cat-row{display:flex;gap:6px;flex-wrap:wrap}
+.cat-opt{padding:5px 13px;border:1px solid var(--ln);border-radius:99px;font-size:12px;color:var(--t3);cursor:pointer;background:transparent;font-family:var(--font);font-weight:300;transition:all 0.15s}
+.cat-opt.on{border-color:var(--t2);color:var(--t1);background:var(--s2)}
+
+/* ── FORM ACTIONS ── */
+.f-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+.btn-ghost{background:transparent;border:1px solid var(--ln2);color:var(--t2);font-family:var(--font);font-size:13px;font-weight:300;padding:9px 18px;border-radius:var(--r);cursor:pointer;transition:all 0.15s}
+.btn-ghost:hover{color:var(--t1)}
+.btn-pri{background:var(--t1);border:none;color:var(--bg);font-family:var(--font);font-size:13px;font-weight:500;padding:9px 22px;border-radius:var(--r);cursor:pointer;transition:opacity 0.15s}
+.btn-pri:active{opacity:0.8}
+.btn-rej{background:var(--p3b);border:1px solid rgba(184,115,90,0.28);color:var(--p3);font-family:var(--font);font-size:13px;font-weight:400;padding:9px 22px;border-radius:var(--r);cursor:pointer}
+
+/* ── REJECT SHEET ── */
+.rej-warning{font-size:13px;color:var(--t2);font-weight:300;line-height:1.65;margin-bottom:18px}
+
+/* ── SETTINGS ── */
+.st-section{margin-bottom:26px}
+.st-lbl{font-size:9px;color:var(--t3);letter-spacing:0.12em;text-transform:uppercase;font-weight:400;margin-bottom:12px}
+.st-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--ln);gap:8px}
+.st-row:last-child{border-bottom:none}
+.st-row-lbl{flex:1;font-size:13px;color:var(--t1);font-weight:300}
+.st-row-sub{font-size:11px;color:var(--t3);font-weight:300}
+.st-btn{background:transparent;border:none;font-family:var(--font);font-size:12px;color:var(--t2);cursor:pointer;padding:4px 8px;transition:color 0.15s}
+.st-btn:hover{color:var(--t1)}
+.st-btn.danger{color:var(--t3)}.st-btn.danger:hover{color:var(--p3)}
+.def-badge{font-size:9px;color:var(--t3);background:var(--s2);padding:2px 7px;border-radius:4px}
+.st-add{display:flex;gap:8px;align-items:center;margin-top:11px}
+.st-inp{flex:1;background:transparent;border:none;border-bottom:1px solid var(--ln2);color:var(--t1);font-size:13px;font-weight:300;padding:6px 0;outline:none;font-family:var(--font)}
+.st-inp::placeholder{color:var(--t3)}
+.export-btn{width:100%;background:var(--s2);border:1px solid var(--ln2);color:var(--t1);font-family:var(--font);font-size:13px;font-weight:300;padding:13px 14px;border-radius:var(--r);cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;transition:background 0.15s}
+.export-btn:hover{background:var(--s3)}
+.export-btn span{color:var(--t3);font-size:11px}
+
+/* ── ANALYSIS ── */
+.an-wrap{padding:16px 20px 0}
+.df-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}
+.df-btn{padding:5px 13px;border:1px solid var(--ln);border-radius:99px;font-size:11px;color:var(--t3);background:transparent;cursor:pointer;font-family:var(--font);font-weight:300;transition:all 0.15s}
+.df-btn.on{border-color:var(--t2);color:var(--t1);background:var(--s2)}
+.stat-row{display:flex;gap:8px;margin-bottom:26px}
+.stat-card{flex:1;background:var(--s1);border:1px solid var(--ln);border-radius:var(--r);padding:12px;text-align:center}
+.stat-n{font-family:var(--serif);font-size:28px;font-weight:300;color:var(--t1);line-height:1;margin-bottom:4px}
+.stat-l{font-size:9px;color:var(--t3);font-weight:300;letter-spacing:0.05em;text-transform:uppercase}
+.an-card{margin-bottom:28px}
+.an-ttl{font-family:var(--serif);font-size:17px;font-weight:300;font-style:italic;color:var(--t1);margin-bottom:3px}
+.an-sub{font-size:11px;color:var(--t3);font-weight:300;margin-bottom:14px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.bar-lbl{font-size:11px;color:var(--t2);font-weight:300;width:88px;flex-shrink:0}
+.bar-wrap{flex:1;height:6px;background:var(--s2);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;transition:width 0.7s cubic-bezier(0.34,1.1,0.64,1)}
+.bar-val{font-size:10px;color:var(--t3);font-weight:300;width:36px;text-align:right;flex-shrink:0;font-family:var(--font)}
+.bp3{background:var(--p3)}.bp2{background:var(--p2)}.bp1{background:var(--p1)}.bd{background:var(--dc)}.bg{background:var(--t3)}
+.week-wrap{display:flex;gap:5px;align-items:flex-end;height:56px;margin-bottom:8px}
+.wk-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.wk-bar{width:100%;border-radius:3px 3px 0 0;background:var(--s2);min-height:3px;transition:height 0.5s ease}
+.wk-bar.lit{background:var(--p3);opacity:0.65}
+.wk-lbl{font-size:9px;color:var(--t3);font-weight:300}
+.rej-row{padding:9px 0;border-bottom:1px solid var(--ln)}
+.rej-row:last-child{border-bottom:none}
+.rej-task-ttl{font-size:10px;color:var(--t3);margin-bottom:2px}
+.rej-remark-txt{font-size:12px;color:var(--t2);font-weight:300;line-height:1.55}
+.no-data{text-align:center;padding:20px;font-size:12px;color:var(--t3);font-weight:300;font-style:italic;font-family:var(--serif)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--s3);border:1px solid var(--ln2);color:var(--t1);font-size:12px;font-weight:300;padding:8px 18px;border-radius:99px;opacity:0;pointer-events:none;transition:opacity 0.2s,transform 0.2s;white-space:nowrap;z-index:200}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── ONBOARDING ── */
+.ob{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;text-align:center}
+.ob-logo{font-family:var(--serif);font-size:52px;font-weight:300;font-style:italic;color:var(--t1);letter-spacing:-0.02em;line-height:1;margin-bottom:6px}
+.ob-by{font-size:10px;color:var(--t3);letter-spacing:0.12em;margin-bottom:52px}
+.ob-steps{display:flex;flex-direction:column;gap:22px;text-align:left;width:100%;max-width:290px;margin-bottom:52px}
+.ob-step{display:flex;gap:15px;align-items:flex-start}
+.ob-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.ob-step-ttl{font-size:14px;color:var(--t1);font-weight:400;margin-bottom:3px}
+.ob-step-sub{font-size:12px;color:var(--t3);font-weight:300;line-height:1.55}
+.ob-btn{background:var(--t1);border:none;color:var(--bg);font-family:var(--font);font-size:14px;font-weight:500;padding:14px 44px;border-radius:99px;cursor:pointer;transition:opacity 0.2s;letter-spacing:0.02em}
+.ob-btn:active{opacity:0.8}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="hdr">
+    <div>
+      <div class="brand">Docket</div>
+      <div class="brand-by">by @thedatacore</div>
+    </div>
+    <div class="hdr-right">
+      <button class="hdr-btn" onclick="openSettings()" aria-label="Settings">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="9" cy="9" r="2.2"/><path d="M9 1.5v1.2M9 15.3v1.2M1.5 9h1.2M15.3 9h1.2M4 4l.85.85M13.15 13.15l.85.85M14 4l-.85.85M4.85 13.15 4 14"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="content" id="content">
+    <div class="view active" id="view-active">
+      <div class="sec-hdr"><span class="sec-title">Tasks</span><span class="sec-count" id="cnt-active"></span></div>
+      <div id="ov-notice"></div>
+      <div class="task-list" id="list-active"></div>
+    </div>
+    <div class="view" id="view-done">
+      <div class="sec-hdr"><span class="sec-title">Completed</span><span class="sec-count" id="cnt-done"></span></div>
+      <div class="task-list" id="list-done"></div>
+    </div>
+    <div class="view" id="view-rejected">
+      <div class="sec-hdr"><span class="sec-title">Rejected</span><span class="sec-count" id="cnt-rej"></span></div>
+      <div class="task-list" id="list-rej"></div>
+    </div>
+    <div class="view" id="view-analysis">
+      <div class="sec-hdr"><span class="sec-title">Insights</span></div>
+      <div class="an-wrap" id="an-wrap"></div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="nb active" id="nb-active" onclick="switchView('active')">
+      <div class="nb-ind"></div>
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="5" x2="15" y2="5"/><line x1="3" y1="9" x2="12" y2="9"/><line x1="3" y1="13" x2="9" y2="13"/></svg>
+      Tasks
+    </button>
+    <button class="nb" id="nb-done" onclick="switchView('done')">
+      <div class="nb-ind"></div>
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,9 7,13 15,5"/></svg>
+      Done
+    </button>
+    <button class="nb" id="nb-rejected" onclick="switchView('rejected')">
+      <div class="nb-ind"></div>
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="5" y1="5" x2="13" y2="13"/><line x1="13" y1="5" x2="5" y2="13"/></svg>
+      Rejected
+    </button>
+    <button class="nb" id="nb-analysis" onclick="switchView('analysis')">
+      <div class="nb-ind"></div>
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,14 7,8 11,11 15,4"/></svg>
+      Insights
+    </button>
+  </nav>
+
+  <button class="fab" id="fab" onclick="openTaskForm(null)" aria-label="New task">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <line x1="10" y1="3" x2="10" y2="17"/><line x1="3" y1="10" x2="17" y2="10"/>
+    </svg>
+  </button>
+</div>
+
+<!-- Task Form Sheet -->
+<div class="overlay" id="sh-task" onclick="shClick(event,'sh-task')">
+  <div class="sheet"><div class="sheet-handle"></div><div id="sh-task-body"></div></div>
+</div>
+
+<!-- Reject Sheet -->
+<div class="overlay" id="sh-reject" onclick="shClick(event,'sh-reject')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-ttl">Why reject this?</div>
+    <p class="rej-warning">This moves to your Rejected list with your reason recorded. You can reopen it later.</p>
+    <div class="field">
+      <label class="field-lbl">Remark *</label>
+      <textarea class="f-inp" id="rej-inp" placeholder="Blocked, deprioritised, out of scope…" rows="3"></textarea>
+    </div>
+    <div class="f-acts">
+      <button class="btn-ghost" onclick="closeSheet('sh-reject')">Cancel</button>
+      <button class="btn-rej" onclick="confirmReject()">Confirm Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Sheet -->
+<div class="overlay" id="sh-settings" onclick="shClick(event,'sh-settings')">
+  <div class="sheet"><div class="sheet-handle"></div><div id="sh-settings-body"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Onboarding -->
+<div class="ob" id="ob">
+  <div class="ob-logo">Docket</div>
+  <div class="ob-by">by @thedatacore</div>
+  <div class="ob-steps">
+    <div class="ob-step">
+      <div class="ob-dot" style="background:var(--p3)"></div>
+      <div><div class="ob-step-ttl">One north star at a time</div><div class="ob-step-sub">Only one task can hold Priority 3. Assign a new one — the old one steps down automatically.</div></div>
+    </div>
+    <div class="ob-step">
+      <div class="ob-dot" style="background:var(--p2)"></div>
+      <div><div class="ob-step-ttl">Deadlines sort everything</div><div class="ob-step-sub">Overdue tasks surface to the top regardless of priority. Your list stays honest.</div></div>
+    </div>
+    <div class="ob-step">
+      <div class="ob-dot" style="background:var(--p1)"></div>
+      <div><div class="ob-step-ttl">Every decision leaves a trace</div><div class="ob-step-sub">Log notes on any task. Rejected tasks carry a mandatory remark — nothing disappears quietly.</div></div>
+    </div>
+  </div>
+  <button class="ob-btn" onclick="finishOnboarding()">Begin</button>
+</div>
+
+<script>
+// ── STATE ────────────────────────────────────────────
+const SK = 'docket_v2';
+const DEF_CATS = ['Defect','Review','Follow-up'];
+
+let S = { tasks:[], categories:[...DEF_CATS], onboarded:false };
+let curView = 'active';
+let expandId = null;
+let editId = null;
+let rejectId = null;
+let selPri = 2;
+let selCat = null;
+let anRange = '30';
+
+function load(){try{const r=localStorage.getItem(SK);if(r)S={...S,...JSON.parse(r)}}catch(e){}}
+function save(){try{localStorage.setItem(SK,JSON.stringify(S))}catch(e){toast('Storage error')}}
+
+// ── UTILS ─────────────────────────────────────────────
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+function fmtDl(ts){
+  if(!ts)return '';
+  const diff=(new Date(ts)-new Date())/(1000*60*60);
+  if(diff<0){const d=Math.ceil(-diff/24);return d<=1?'overdue today':`${Math.ceil(-diff/24)}d overdue`}
+  if(diff<24)return 'due today';
+  if(diff<48)return 'tomorrow';
+  if(diff<168)return `${Math.ceil(diff/24)}d`;
+  return new Date(ts).toLocaleDateString([],{month:'short',day:'numeric'});
+}
+
+function fmtTs(ts){
+  const d=new Date(ts),n=new Date();
+  const diff=Math.floor((n-d)/(1000*60*60*24));
+  if(diff===0)return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  if(diff<7)return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  return d.toLocaleDateString([],{month:'short',day:'numeric'});
+}
+
+function isOD(t){return!!t.deadline&&new Date(t.deadline)<new Date()}
+
+function score(t){
+  const p=t.priority*2.5;
+  const diff=(new Date(t.deadline||0)-new Date())/(1000*60*60);
+  let d=0;
+  if(t.deadline){if(diff<0)d=12;else if(diff<24)d=9;else if(diff<48)d=6;else if(diff<72)d=4;else if(diff<168)d=2;else d=1}
+  return p+d;
+}
+
+function sortActive(tasks){
+  const od=tasks.filter(isOD).sort((a,b)=>new Date(a.deadline)-new Date(b.deadline));
+  const nm=tasks.filter(t=>!isOD(t)).sort((a,b)=>score(b)-score(a));
+  return[...od,...nm];
+}
+
+// ── TASK OPS ──────────────────────────────────────────
+function getP3(){return S.tasks.find(t=>t.state==='active'&&t.priority===3)}
+
+function createTask(d){
+  let dem=null;
+  if(d.priority===3){const e=getP3();if(e){e.priority=2;e.updatedAt=Date.now();e.log.push({ts:Date.now(),text:'Auto-demoted to P2 — a new Priority 3 task was set.'});dem=e.title}}
+  const t={id:uid(),title:d.title,description:d.description||'',priority:d.priority,deadline:d.deadline||null,softReview:d.softReview||null,category:d.category||null,state:'active',log:[],createdAt:Date.now(),updatedAt:Date.now(),completedAt:null,rejectedAt:null,rejectionRemark:null,reopenedFrom:null};
+  S.tasks.unshift(t);save();
+  if(dem)toast(`"${dem.slice(0,28)}…" moved to P2`);else toast('Task added');
+  return t;
+}
+
+function updateTask(id,d){
+  const t=S.tasks.find(x=>x.id===id);if(!t)return;
+  let dem=null;
+  if(d.priority===3&&t.priority!==3){const e=getP3();if(e&&e.id!==id){e.priority=2;e.updatedAt=Date.now();e.log.push({ts:Date.now(),text:'Auto-demoted to P2.'});dem=e.title}}
+  Object.assign(t,d,{updatedAt:Date.now()});save();
+  if(dem)toast(`"${dem.slice(0,24)}…" moved to P2`);else toast('Task updated');
+}
+
+function completeTask(id){
+  const t=S.tasks.find(x=>x.id===id);if(!t)return;
+  t.state='completed';t.completedAt=Date.now();t.updatedAt=Date.now();
+  t.log.push({ts:Date.now(),text:'Marked as complete.'});
+  save();toast('Done ✓');expandId=null;render();
+}
+
+function rejectTask(id,remark){
+  const t=S.tasks.find(x=>x.id===id);if(!t)return;
+  t.state='rejected';t.rejectedAt=Date.now();t.rejectionRemark=remark;t.updatedAt=Date.now();
+  t.log.push({ts:Date.now(),text:`Rejected — ${remark}`});
+  save();toast('Moved to rejected');expandId=null;rejectId=null;render();
+}
+
+function reopenTask(id){
+  const o=S.tasks.find(x=>x.id===id);if(!o)return;
+  const t={id:uid(),title:o.title,description:o.description,priority:Math.min(o.priority,2),deadline:null,softReview:null,category:o.category,state:'active',log:[{ts:Date.now(),text:`Reopened from rejected task. Original remark: "${o.rejectionRemark}"`}],createdAt:Date.now(),updatedAt:Date.now(),completedAt:null,rejectedAt:null,rejectionRemark:null,reopenedFrom:id};
+  S.tasks.unshift(t);save();toast('Reopened as new task');
+  switchView('active');expandId=t.id;render();
+}
+
+function addLog(id,text){
+  const t=S.tasks.find(x=>x.id===id);if(!t||!text.trim())return;
+  t.log.push({ts:Date.now(),text:text.trim()});t.updatedAt=Date.now();save();render();
+}
+
+// ── NAVIGATION ────────────────────────────────────────
+function switchView(v){
+  curView=v;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`view-${v}`).classList.add('active');
+  document.querySelectorAll('.nb').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`nb-${v}`).classList.add('active');
+  document.getElementById('fab').classList.toggle('hidden',v==='analysis');
+  if(v==='analysis')renderAnalysis();
+  document.getElementById('content').scrollTop=0;
+}
+
+// ── RENDER ────────────────────────────────────────────
+function render(){renderActive();renderDone();renderRej();if(curView==='analysis')renderAnalysis()}
+
+function renderActive(){
+  const all=S.tasks.filter(t=>t.state==='active');
+  const sorted=sortActive(all);
+  const od=sorted.filter(isOD);
+  document.getElementById('cnt-active').textContent=all.length||'';
+  const n=document.getElementById('ov-notice');
+  n.innerHTML=od.length?`<div class="ov-notice">${od.length} task${od.length>1?'s':''} past deadline — pinned for immediate attention</div>`:'';
+  const L=document.getElementById('list-active');
+  if(!sorted.length){L.innerHTML=`<div class="empty"><div class="empty-glyph">·</div><div class="empty-ttl">Clear mind, open page</div><div class="empty-sub">Tap + to add your first task.<br>Priority 3 is your north star — only one at a time.</div></div>`;return}
+  L.innerHTML=sorted.map(t=>card(t,'active')).join('');
+  bindLogs();
+}
+
+function renderDone(){
+  const all=S.tasks.filter(t=>t.state==='completed').sort((a,b)=>b.completedAt-a.completedAt);
+  document.getElementById('cnt-done').textContent=all.length||'';
+  const L=document.getElementById('list-done');
+  if(!all.length){L.innerHTML=`<div class="empty"><div class="empty-ttl">Nothing finished yet</div><div class="empty-sub">Completed tasks live here.</div></div>`;return}
+  L.innerHTML=all.map(t=>card(t,'done')).join('');
+}
+
+function renderRej(){
+  const all=S.tasks.filter(t=>t.state==='rejected').sort((a,b)=>b.rejectedAt-a.rejectedAt);
+  document.getElementById('cnt-rej').textContent=all.length||'';
+  const L=document.getElementById('list-rej');
+  if(!all.length){L.innerHTML=`<div class="empty"><div class="empty-ttl">Nothing rejected</div><div class="empty-sub">Tasks you consciously set aside appear here, with your reason on record.</div></div>`;return}
+  L.innerHTML=all.map(t=>card(t,'rejected')).join('');
+}
+
+function card(t,type){
+  const exp=expandId===t.id;
+  const od=type==='active'&&isOD(t);
+  const dot=type==='active'?`pd${t.priority}`:(type==='done'?'pdd':'pdr');
+  const dl=t.deadline?`<div class="task-dl${od?' od':''}">${fmtDl(t.deadline)}</div>`:'';
+  const prev=(!exp&&t.description)?`<div class="task-preview">${esc(t.description)}</div>`:'';
+
+  let exp_html='';
+  if(exp){
+    // chips
+    const pLbls={1:'Background',2:'Important',3:'North Star'};
+    let chips='';
+    if(type==='active') chips+=`<span class="chip chip-p${t.priority}">P${t.priority} · ${pLbls[t.priority]}</span>`;
+    if(t.category) chips+=`<span class="chip chip-cat">${esc(t.category)}</span>`;
+    if(t.deadline){const dl2=new Date(t.deadline).toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});chips+=`<span class="chip ${od?'chip-od':'chip-date'}">Due ${dl2}</span>`}
+    if(t.softReview){const sr=new Date(t.softReview).toLocaleDateString([],{month:'short',day:'numeric'});chips+=`<span class="chip chip-sr">Review ${sr}</span>`}
+    if(t.completedAt){const ct=new Date(t.completedAt).toLocaleDateString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});chips+=`<span class="chip chip-done">Done ${ct}</span>`}
+
+    const desc=t.description?`<div class="task-desc">${esc(t.description)}</div>`:'';
+    const rej=t.rejectionRemark?`<div class="rej-box"><div class="rej-box-lbl">Rejection Remark</div><div class="rej-box-txt">${esc(t.rejectionRemark)}</div></div>`:'';
+    
+    let logH='';
+    if(t.log.length){
+      const entries=t.log.map(e=>`<div class="log-entry"><span class="log-ts">${fmtTs(e.ts)}</span><span class="log-txt">${esc(e.text)}</span></div>`).join('');
+      logH=`<div class="log-section"><div class="log-lbl">Activity</div>${entries}</div>`;
+    }
+    
+    const addLog=type==='active'?`<div class="log-add"><textarea class="log-inp" id="li-${t.id}" placeholder="Add a note…" rows="1" onkeydown="logKey(event,'${t.id}')"></textarea><button class="log-save" onclick="subLog('${t.id}')">Save</button></div>`:'';
+    
+    let acts='';
+    if(type==='active') acts=`<div class="t-acts"><button class="ta ta-edit" onclick="openTaskForm('${t.id}')">Edit</button><button class="ta ta-done" onclick="completeTask('${t.id}')">Complete</button><div class="ta-sp"></div><button class="ta ta-rej" onclick="openReject('${t.id}')">Reject</button></div>`;
+    else if(type==='rejected') acts=`<div class="t-acts"><button class="ta ta-reopen" onclick="reopenTask('${t.id}')">Reopen as new task</button></div>`;
+
+    exp_html=`<div class="task-expand" onclick="event.stopPropagation()">
+      ${desc}${chips?`<div class="chips">${chips}</div>`:''}
+      ${rej}${logH}${addLog}
+      ${acts?`<div style="height:1px;background:var(--ln);margin:10px 0 0"></div>${acts}`:''}
+    </div>`;
+  }
+
+  return `<div class="task-row${exp?' open':''}" id="tr-${t.id}" onclick="toggle('${t.id}')">
+    <div class="task-main">
+      <div class="pdot ${dot}"></div>
+      <div class="task-body">
+        <div class="task-ttl${type!=='active'?' crossed':''}">${esc(t.title)}</div>
+        ${prev}
+      </div>
+      ${dl}
+    </div>
+    ${exp_html}
+  </div>`;
+}
+
+function toggle(id){
+  expandId=expandId===id?null:id;
+  render();
+  if(expandId){setTimeout(()=>{const e=document.getElementById(`tr-${id}`);if(e)e.scrollIntoView({behavior:'smooth',block:'nearest'})},60)}
+}
+
+function bindLogs(){
+  document.querySelectorAll('.log-inp').forEach(el=>{
+    el.addEventListener('input',function(){this.style.height='auto';this.style.height=this.scrollHeight+'px'});
+  });
+}
+
+function logKey(e,id){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();subLog(id)}}
+function subLog(id){const el=document.getElementById(`li-${id}`);if(!el)return;const v=el.value.trim();if(!v)return;addLog(id,v)}
+
+// ── TASK FORM ─────────────────────────────────────────
+function openTaskForm(id){
+  editId=id||null;
+  const t=id?S.tasks.find(x=>x.id===id):null;
+  selPri=t?t.priority:2;
+  selCat=t?t.category:null;
+  
+  const ep=getP3();
+  const p3warn=(ep&&!(t&&t.id===ep.id))?ep.title:'';
+  const pLabels={1:'background',2:'important',3:'north star'};
+  const pColors={1:'var(--p1)',2:'var(--p2)',3:'var(--p3)'};
+  
+  const pPicker=[1,2,3].map(p=>{
+    const sel=selPri===p?`sel${p}`:'';
+    return `<button class="p-opt ${sel}" id="popt-${p}" onclick="setPri(${p})">
+      <div class="pdot-lg" style="background:${pColors[p]}"></div>
+      <div class="p-n">${p}</div>
+      <div class="p-lb">${pLabels[p]}</div>
+    </button>`;
+  }).join('');
+  
+  const catOpts=S.categories.map(c=>`<button class="cat-opt${selCat===c?' on':''}" data-cat="${esc(c)}" onclick="setCat('${esc(c)}')">${esc(c)}</button>`).join('');
+  const dlV=t&&t.deadline?new Date(t.deadline).toISOString().slice(0,16):'';
+  const srV=t&&t.softReview?new Date(t.softReview).toISOString().slice(0,10):'';
+  
+  document.getElementById('sh-task-body').innerHTML=`
+    <div class="sheet-ttl">${t?'Edit Task':'New Task'}</div>
+    <div class="field"><label class="field-lbl">Title *</label><input type="text" class="f-inp" id="f-title" placeholder="What needs to be done?" value="${t?esc(t.title):''}" autocomplete="off"></div>
+    <div class="field"><label class="field-lbl">Description</label><textarea class="f-inp" id="f-desc" placeholder="Add context (optional)…" rows="2">${t?esc(t.description):''}</textarea></div>
+    <div class="field">
+      <label class="field-lbl">Priority</label>
+      <div class="p-picker">${pPicker}</div>
+      <div class="p3-notice${selPri===3&&p3warn?' on':''}" id="p3w">${p3warn?`Setting P3 will move "${p3warn.slice(0,30)}…" to P2.`:''}</div>
+    </div>
+    <div class="field"><label class="field-lbl">Deadline</label><input type="datetime-local" class="f-inp" id="f-dl" value="${dlV}"></div>
+    <div class="field"><label class="field-lbl">Soft Review Date <span style="font-size:9px;color:var(--t3)">(for open tasks)</span></label><input type="date" class="f-inp" id="f-sr" value="${srV}"></div>
+    <div class="field"><label class="field-lbl">Category</label><div class="cat-row">${catOpts}</div></div>
+    <div class="f-acts"><button class="btn-ghost" onclick="closeSheet('sh-task')">Cancel</button><button class="btn-pri" onclick="saveForm()">${t?'Update':'Add Task'}</button></div>
+  `;
+  openSheet('sh-task');
+  setTimeout(()=>{const el=document.getElementById('f-title');if(el)el.focus()},340);
+}
+
+function setPri(p){
+  selPri=p;
+  [1,2,3].forEach(n=>{
+    const el=document.getElementById(`popt-${n}`);
+    if(el)el.className=`p-opt${selPri===n?` sel${n}`:''}`;
+  });
+  const ep=getP3();
+  const w=document.getElementById('p3w');
+  if(w){
+    if(p===3&&ep&&(!editId||ep.id!==editId)){
+      w.textContent=`Setting P3 will move "${ep.title.slice(0,28)}${ep.title.length>28?'…':''}" to P2.`;
+      w.classList.add('on');
+    }else{w.classList.remove('on')}
+  }
+}
+
+function setCat(name){
+  selCat=selCat===name?null:name;
+  document.querySelectorAll('.cat-opt').forEach(el=>{
+    el.classList.toggle('on',el.dataset.cat===name&&selCat===name);
+  });
+}
+
+function saveForm(){
+  const title=document.getElementById('f-title').value.trim();
+  if(!title){document.getElementById('f-title').focus();toast('Title required');return}
+  const dlR=document.getElementById('f-dl').value;
+  const srR=document.getElementById('f-sr').value;
+  const data={title,description:document.getElementById('f-desc').value.trim(),priority:selPri,deadline:dlR?new Date(dlR).getTime():null,softReview:srR?new Date(srR).getTime():null,category:selCat};
+  if(editId)updateTask(editId,data);else createTask(data);
+  closeSheet('sh-task');render();
+}
+
+// ── REJECT ────────────────────────────────────────────
+function openReject(id){rejectId=id;document.getElementById('rej-inp').value='';openSheet('sh-reject');setTimeout(()=>document.getElementById('rej-inp').focus(),340)}
+function confirmReject(){
+  const r=document.getElementById('rej-inp').value.trim();
+  if(!r){document.getElementById('rej-inp').focus();toast('Remark required');return}
+  closeSheet('sh-reject');rejectTask(rejectId,r);
+}
+
+// ── SETTINGS ──────────────────────────────────────────
+function openSettings(){renderSettings();openSheet('sh-settings')}
+
+function renderSettings(){
+  const cats=S.categories.map(c=>`<div class="st-row">
+    <span class="st-row-lbl">${esc(c)}</span>
+    ${DEF_CATS.includes(c)?'<span class="def-badge">default</span>':''}
+    <button class="st-btn danger" onclick="delCat('${esc(c)}')" ${DEF_CATS.includes(c)?'style="visibility:hidden"':''}>✕</button>
+  </div>`).join('');
+  
+  document.getElementById('sh-settings-body').innerHTML=`
+    <div class="sheet-ttl">Settings</div>
+    <div class="st-section">
+      <div class="st-lbl">Categories</div>
+      <div id="cat-list">${cats}</div>
+      <div class="st-add"><input class="st-inp" id="new-cat" placeholder="New category…" onkeydown="if(event.key==='Enter')addCat()"><button class="st-btn" onclick="addCat()">Add</button></div>
+    </div>
+    <div class="st-section">
+      <div class="st-lbl">Data</div>
+      <button class="export-btn" onclick="exportData()">Export history as JSON <span>${S.tasks.length} tasks</span></button>
+    </div>
+    <div class="st-section">
+      <div class="st-lbl">About</div>
+      <div class="st-row"><span class="st-row-lbl">Docket MVP</span><span class="st-row-sub">by @thedatacore</span></div>
+      <div class="st-row"><span class="st-row-lbl">Storage</span><span class="st-row-sub">Local device only</span></div>
+    </div>
+  `;
+}
+
+function addCat(){
+  const el=document.getElementById('new-cat');const n=el.value.trim();
+  if(!n)return;
+  if(S.categories.find(c=>c.toLowerCase()===n.toLowerCase())){toast('Already exists');return}
+  S.categories.push(n);save();el.value='';renderSettings();toast('Category added');
+}
+
+function delCat(name){
+  if(DEF_CATS.includes(name))return;
+  S.categories=S.categories.filter(c=>c!==name);save();renderSettings();toast('Removed');
+}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),version:'docket_v2',by:'@thedatacore',tasks:S.tasks,categories:S.categories},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`docket-export-${new Date().toISOString().slice(0,10)}.json`;a.click();
+  URL.revokeObjectURL(a.href);toast('Exported');
+}
+
+// ── ANALYSIS ──────────────────────────────────────────
+function getAnCutoff(){
+  if(anRange==='all')return null;
+  const d=new Date();d.setDate(d.getDate()-parseInt(anRange));return d.getTime();
+}
+
+function barRow(label,val,total,cls,suf=''){
+  const pct=total>0?Math.round((val/total)*100):0;
+  const disp=suf?`${val}${suf}`:`${val}/${total}`;
+  return`<div class="bar-row"><div class="bar-lbl">${label}</div><div class="bar-wrap"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div><div class="bar-val">${disp}</div></div>`;
+}
+
+function renderAnalysis(){
+  const W=document.getElementById('an-wrap');
+  const cut=getAnCutoff();
+  const all=cut?S.tasks.filter(t=>t.createdAt>=cut):S.tasks;
+  const done=all.filter(t=>t.state==='completed');
+  const rej=all.filter(t=>t.state==='rejected');
+  const active=all.filter(t=>t.state==='active');
+  
+  const ranges=[{v:'7',l:'7 days'},{v:'30',l:'30 days'},{v:'90',l:'90 days'},{v:'all',l:'All time'}];
+  const dfHtml=`<div class="df-row">${ranges.map(r=>`<button class="df-btn${anRange===r.v?' on':''}" onclick="setRange('${r.v}')">${r.l}</button>`).join('')}</div>`;
+  
+  const statHtml=`<div class="stat-row">
+    <div class="stat-card"><div class="stat-n">${done.length}</div><div class="stat-l">Completed</div></div>
+    <div class="stat-card"><div class="stat-n">${rej.length}</div><div class="stat-l">Rejected</div></div>
+    <div class="stat-card"><div class="stat-n">${active.length}</div><div class="stat-l">Active</div></div>
+  </div>`;
+  
+  if(!all.length){W.innerHTML=dfHtml+`<div class="empty"><div class="empty-ttl">No data yet</div><div class="empty-sub">Complete or reject a few tasks to see patterns here.</div></div>`;return}
+  
+  // Chart 1: completion by priority
+  const pData=[3,2,1].map(p=>({p,tot:all.filter(t=>t.priority===p).length,done:done.filter(t=>t.priority===p).length}));
+  const maxP=Math.max(...pData.map(d=>d.tot),1);
+  const c1=`<div class="an-card"><div class="an-ttl">Completion by priority</div><div class="an-sub">Finished tasks per priority level</div>${pData.map(d=>barRow(`P${d.p} · ${['','Background','Important','North Star'][d.p]}`,d.done,d.tot,`bp${d.p}`)).join('')}</div>`;
+  
+  // Chart 2: avg resolution time
+  const avgH=p=>{ const tt=done.filter(t=>t.priority===p); if(!tt.length)return 0; return Math.round(tt.reduce((s,t)=>s+(t.completedAt-t.createdAt),0)/tt.length/(1000*60*60)); };
+  const at=[3,2,1].map(avgH); const maxAt=Math.max(...at,1);
+  const c2=`<div class="an-card"><div class="an-ttl">Avg. resolution time</div><div class="an-sub">Hours from creation to completion by priority</div>${[3,2,1].map((p,i)=>barRow(`P${p}`,at[i],maxAt,`bp${p}`,'h')).join('')}</div>`;
+  
+  // Chart 3: category breakdown
+  const cMap={};done.forEach(t=>{if(t.category)cMap[t.category]=(cMap[t.category]||0)+1});
+  const cEnt=Object.entries(cMap).sort((a,b)=>b[1]-a[1]);
+  const maxC=Math.max(...cEnt.map(e=>e[1]),1);
+  const c3=`<div class="an-card"><div class="an-ttl">Completed by category</div><div class="an-sub">Which type of work gets finished</div>${cEnt.length?cEnt.map(([cat,n])=>barRow(cat,n,maxC,'bd')).join(''):'<div class="no-data">No categorised completions yet</div>'}</div>`;
+  
+  // Chart 4: weekly overdue
+  const wks=[]; const wkL=[];
+  for(let i=6;i>=0;i--){
+    const ws=new Date();ws.setDate(ws.getDate()-i*7-ws.getDay());ws.setHours(0,0,0,0);
+    const we=new Date(ws);we.setDate(ws.getDate()+7);
+    const cnt=S.tasks.filter(t=>t.deadline&&t.state!=='active'&&new Date(t.deadline)<new Date(t.completedAt||t.rejectedAt||0)&&t.createdAt>=ws.getTime()&&t.createdAt<we.getTime()).length;
+    wks.push(cnt);wkL.push(`W${7-i}`);
+  }
+  const maxWk=Math.max(...wks,1);
+  const wBars=wks.map((v,i)=>{const h=Math.max((v/maxWk)*48,v>0?6:3);return`<div class="wk-col"><div class="wk-bar${v>0?' lit':''}" style="height:${h}px"></div><div class="wk-lbl">${wkL[i]}</div></div>`}).join('');
+  const c4=`<div class="an-card"><div class="an-ttl">Overdue frequency</div><div class="an-sub">Tasks that crossed their deadline before being resolved</div><div class="week-wrap">${wBars}</div></div>`;
+  
+  // Rejection log
+  const rejRows=rej.map(t=>`<div class="rej-row"><div class="rej-task-ttl">${esc(t.title)}</div><div class="rej-remark-txt">${esc(t.rejectionRemark||'—')}</div></div>`).join('');
+  const c5=`<div class="an-card"><div class="an-ttl">Rejection log</div><div class="an-sub">What you chose not to do, and why</div>${rejRows||'<div class="no-data">No rejections in this range</div>'}</div>`;
+  
+  W.innerHTML=dfHtml+statHtml+c1+c2+c3+c4+c5;
+}
+
+function setRange(r){anRange=r;renderAnalysis()}
+
+// ── SHEETS ────────────────────────────────────────────
+function openSheet(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden'}
+function closeSheet(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';if(id==='sh-task')editId=null;if(id==='sh-reject')rejectId=null}
+function shClick(e,id){if(e.target===document.getElementById(id))closeSheet(id)}
+
+// ── TOAST ─────────────────────────────────────────────
+let tT=null;
+function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('on');if(tT)clearTimeout(tT);tT=setTimeout(()=>el.classList.remove('on'),2200)}
+
+// ── ONBOARDING ────────────────────────────────────────
+function finishOnboarding(){S.onboarded=true;save();document.getElementById('ob').style.display='none'}
+
+// ── INIT ──────────────────────────────────────────────
+load();
+DEF_CATS.forEach(c=>{if(!S.categories.includes(c))S.categories.unshift(c)});
+if(!S.onboarded)document.getElementById('ob').style.display='flex';
+else document.getElementById('ob').style.display='none';
+render();
+</script>
+</body>
+</html>
